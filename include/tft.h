@@ -47,6 +47,7 @@ const uint16_t H_SPACE = 8;				// higth space
 const uint16_t W_SPACE = 12;      // width space 
 const uint16_t Y_TOP   = 0;		 	  // start upper area
 const uint16_t H_TOP   = 35;		  // higth of upper area
+const uint16_t Y_PLACE = DISP_WIDTH - 2 * W_SPACE;
 
 const uint16_t H_BOTTOM = 35; 
 const uint16_t Y_BOTTOM = DISP_HIGTH - H_BOTTOM;	// start lower area
@@ -66,10 +67,20 @@ class cDisplay : public TFT_eSPI {
 		void showMain(const char*);
 		void showStation(const station_t*);
 		void showVolume(uint16_t);
+		void scrollText(const char*, uint16_t, uint16_t, uint16_t, uint16_t);
+
 		
 	private:
+		void truncateStringToWidth(const char*, char*, uint16_t);
+
 		uint8_t  u8Rotation;
   	uint32_t u32BackGroundColor;
   	uint32_t u32FontColor;
+
+	  uint16_t actWidth;
+	  uint16_t charWidth;
+
+		char strTitleOld[100];
+  	char strTitleNew[100];
 };
 

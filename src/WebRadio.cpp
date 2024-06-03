@@ -45,7 +45,7 @@ const station_t StationList[ST_MAX] PROGMEM = {
   {7,  "NDR 1",               "http://icecast.ndr.de/ndr/ndr1wellenord/kiel/mp3/128/stream.mp3"},        
   {8,  "Hit Radio FFH",       "http://mp3.ffh.de/radioffh/hqlivestream.mp3"},                            
   {9,  "Radio Arabella",      "https://live.radioarabella.de/stream"},
-  {10,  "80er-Kulthits",       "http://mp3channels.webradio.antenne.de/80er-kulthits"},
+  {10, "80er-Kulthits",       "http://mp3channels.webradio.antenne.de/80er-kulthits"},
   {11, "BR Klassik",          "http://streams.br.de/br-klassik_2.m3u"},
   {12, "Die neue Welle",      "http://www.meine-neue-welle.de/dnw_128.m3u"},
   {13, "Radio BoB AC/DC",     "http://streams.radiobob.de/bob-acdc/mp3-128/streams.radiobob.de/"},
@@ -109,14 +109,7 @@ void setup() {
 
 void loop() { 
   mp3.loop();             // mp3 Steuerung und Wiedergabe
-  
   gpioHandling();       
-
-  // toggle LED 3 -- only for debugging
-  if (millis() > u32DebugTimer + 1000) {
-    led3.Toggle();
-    u32DebugTimer = millis();
-  }
 }
 
 // -----------------------------------------------------------------------------------
@@ -156,6 +149,12 @@ void gpioHandling(void) {
 
   changeVol();          
   changeStation();
+
+  // toggle LED 3 -- only for debugging
+  if (millis() > u32DebugTimer + 1000) {
+    led3.Toggle();
+    u32DebugTimer = millis();
+  }
 }
 
 // -----------------------------------------------------------------------------------

@@ -52,37 +52,8 @@ void cDisplay::showMain(const char* _strData) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// show song tetle
+// show station
 // ---------------------------------------------------------------------------------------------------
-void cDisplay::showSongTitle(const char* _strData) {
-  static char strOld[30] = {"                             "};
-  static char strNew[30] = {"                             "};
-  int i = 0;
-
-  while (_strData[i] != '\0') {
-    if (i >= 30) {
-      strNew[29] = '\0';
-      goto out;
-    } else {
-      strNew[i] = _strData[i];
-    }
-    i++;
-  }
-
-out:
-  setFreeFont(DEFAULT_FONT);
-	
-  // clear actual string
-  setTextColor(TFT_BLACK, TFT_BLACK);
-  drawCentreString(strOld, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
-
-  // draw new string
-  setTextColor(TFT_YELLOW, TFT_BLACK);
-  drawCentreString(strNew, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
-  
-  strcpy(strOld, strNew);
-}
-
 void cDisplay::showStation(const station_t* _strData) {
   static char strOld[40] = {"                                       "};
   char strNew[40];
@@ -161,3 +132,113 @@ void cDisplay::showLowerSection(const char* _strData) {
 
 	strcpy(strOld, _strData);
 }
+
+// ---------------------------------------------------------------------------------------------------
+// show song title
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::showSongTitle(const char* _strData) {
+
+  uint16_t u16TextWidth;
+
+  setFreeFont(DEFAULT_FONT);
+
+  strlcpy(strTitleNew, _strData, sizeof(strTitleNew));
+  
+  u16TextWidth = textWidth(_strData);
+  Serial.println(_strData);
+
+  if (u16TextWidth > 296) {
+    truncateStringToWidth(_strData, strTitleNew, 250);//Y_PLACE);
+    u16TextWidth = textWidth(strTitleNew);
+    Serial.print(String(F("Textbreite - ")));
+    Serial.println(u16TextWidth);
+  }
+
+  Serial.println(strTitleNew);
+  
+  // clear actual string
+  setTextColor(TFT_BLACK, TFT_BLACK);
+  drawCentreString(strTitleOld, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
+
+  // draw new string
+  setTextColor(TFT_YELLOW, TFT_BLACK);
+  drawCentreString(strTitleNew, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
+  
+  strlcpy(strTitleOld, strTitleNew, sizeof(strTitleOld));
+}
+
+// ---------------------------------------------------------------------------------------------------
+// cut string width to maximal pixel value
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::truncateStringToWidth(const char* _str, char* _strResult, uint16_t _maxWidth) {
+  uint16_t i = 0;
+  actWidth = 0;
+  charWidth = 0;
+
+  charWidth = textWidth(_str);
+  Serial.print(String(F("Textbreite org. - ")));
+  Serial.println(charWidth);
+
+  while (_str[i] != '\0') {
+    charWidth = textWidth(String(_str[i]));
+
+    actWidth += charWidth;
+
+    if (actWidth > _maxWidth) {
+      i--;
+      Serial.print(String(F("Abbruch bei ")));
+      Serial.println(actWidth);
+      goto out; 
+    } else {
+       _strResult[i] = _str[i];
+       i++;
+    }      
+  }
+
+out:
+  _strResult[i] = '\0';  
+}
+
+// ---------------------------------------------------------------------------------------------------
+// scroll text
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::scrollText(const char* _myString, uint16_t _scrollWidth, uint16_t _scrollSpeed, uint16_t _textWidth, uint16_t _xPos) {
+  static uint16_t u16State = 0;
+  static uint16_t startX = 0;
+  static uint16_t i = 0;
+
+  uint16_t charWidth = 0;
+  char currentChar;
+
+  switch (u16State) {
+    case 0:         // int scroll area
+      fillRect(0, 0, _scrollWidth, fontHeight(), TFT_BLACK);
+      startX = _scrollWidth;     // set start position of string to scroll
+      i = 0;
+      u16State = 10;
+      break;
+    case 10:
+      currentChar = _myString[i];
+      charWidth = textWidth(String(currentChar));
+      if (startX + charWidth > 0 && startX < _scrollWidth) {
+        setCursor(startX, 0);
+        print(currentChar);
+      }
+    
+      startX += charWidth;
+      if (startX >= _scrollWidth) {
+        u16State = 20;
+      }
+      break;
+    case 20:
+      _xPos -= _scrollSpeed;
+
+      // Wenn der Text vollständig aus dem sichtbaren Bereich herausgelaufen ist, 
+      // setze die x-Position zurück
+      if (_xPos + _textWidth < 0) {
+        _xPos = _scrollWidth;
+      }
+      break;  
+  }
+}
+
