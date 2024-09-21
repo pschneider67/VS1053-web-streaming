@@ -201,23 +201,19 @@ void changeVol(void) {
   switch (u16State) {
     case 0:
       if (u16VolOld != u16Vol) {
+        mp3.setVolume(u16Vol);
+        pref.putShort("Vol", u16Vol);
+        tft.showVolume(u16Vol);
+        Serial.println(String(F("Vol - ")) + String(u16Vol));
+        u16VolOld = u16Vol;
         u32TimeOut = millis();
         u16State = 10;
       }
       break;
     case 10:
       if (millis() - u32TimeOut >= 20) {
-        u16State = 20;
+        u16State = 0;
       }
-      break;
-    case 20:
-      mp3.setVolume(u16Vol);
-      pref.putShort("Vol", u16Vol);
-      tft.showVolume(u16Vol);
-      Serial.print(F("Vol - "));
-      Serial.println(u16Vol);
-      u16VolOld = u16Vol;
-      u16State = 0;
       break;
     default:
       u16State = 0;
@@ -237,23 +233,19 @@ void changeStation(void) {
     case 0:
       if (u16StationOld != u16Station) {
         SpeakerOn.Off();
-        u32TimeOut = millis();   
+        mp3.connecttohost(StationList[u16Station].Url);
+        pref.putShort("Station", u16Station);
+        tft.showStation(&StationList[u16Station]);
+        Serial.print(String(F("Station - ")) + String(u16Station));
+        u16StationOld = u16Station;
+        u32TimeOut = millis();  
         u16State = 10;
       }
       break;
     case 10:
       if (millis() - u32TimeOut >= 20) {
-        u16State = 20;
+        u16State = 0;
       }
-      break;
-    case 20:
-      mp3.connecttohost(StationList[u16Station].Url);
-      pref.putShort("Station", u16Station);
-      tft.showStation(&StationList[u16Station]);
-      Serial.print(F("Station - "));
-      Serial.println(u16Station);
-      u16StationOld = u16Station;
-      u16State = 0;
       break;
     default:
       u16State = 0;
@@ -328,13 +320,12 @@ void vs1053_bitrate(const char *br) {               // called from vs1053
     tft.showBitrate(strData);
 }
 
-/*
 void vs1053_showstation(const char *info) {         // called from vs1053
     Serial.print("STATION:      ");
     Serial.println(info);                           // Show station name
-    showStation(info);
 }
 
+/*
 void vs1053_showstreaminfo(const char *info) {      // called from vs1053
     Serial.print("STREAMINFO:   ");
     Serial.println(info);                           // Show streaminfo
