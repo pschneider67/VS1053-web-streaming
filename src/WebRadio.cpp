@@ -156,7 +156,7 @@ void gpioHandling(void) {
       u16State = 10;  
       break;
     case 10:
-      if (millis() >= u32Timer + 10) {
+      if (millis() - u32Timer >= 10) {
         sw2.incValue(&u16Vol, MP3_VOL_MAX, 1, false);
         sw1.decValue(&u16Vol, MP3_VOL_MAX, 1, false);
         u32Timer = millis();
@@ -164,7 +164,7 @@ void gpioHandling(void) {
       }
       break;
     case 20:
-      if (millis() >= u32Timer + 10) {
+      if (millis() - u32Timer >= 10) {
         sw4.incValue(&u16Station, ST_MAX - 1, 1, true);
         sw3.decValue(&u16Station, ST_MAX - 1, 1, true);
         u32Timer = millis();
@@ -172,7 +172,7 @@ void gpioHandling(void) {
       }
       break;
     case 30:
-      if (millis() >= u32Timer + 10) {
+      if (millis() - u32Timer >= 10) {
         changeVol();          
         changeStation();
         u16State = 0;
@@ -184,7 +184,7 @@ void gpioHandling(void) {
   }
 
   // toggle LED 3 -- only for debugging
-  if (millis() > u32DebugTimer + 1000) {
+  if (millis() - u32DebugTimer >= 1000) {
     led3.Toggle();
     u32DebugTimer = millis();
   }
@@ -206,7 +206,7 @@ void changeVol(void) {
       }
       break;
     case 10:
-      if (millis() > u32TimeOut + 20) {
+      if (millis() - u32TimeOut >= 20) {
         u16State = 20;
       }
       break;
@@ -242,7 +242,7 @@ void changeStation(void) {
       }
       break;
     case 10:
-      if (millis() > u32TimeOut + 20) {
+      if (millis() - u32TimeOut >= 20) {
         u16State = 20;
       }
       break;

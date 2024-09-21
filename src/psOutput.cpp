@@ -77,7 +77,7 @@ bool clOut::Flash(bool _Reset, uint16_t _flashTime) {
 			u16FlashStatus = 10;
 			break;
 		case 10:
-			if (millis() > (u32AktuelleZeit + _flashTime)) {
+			if (millis() - u32AktuelleZeit >= _flashTime) {
 				Off();
 				u16FlashStatus = 20;
 			}

@@ -287,7 +287,7 @@ void cDisplay::scrollText(void) {
       u16State = 20;
       break;
     case 20:
-        if (millis() >= u32Timer + 150) {
+        if (millis() - u32Timer >= 150) {
           u16State = 10;    
         }      
         break;

@@ -80,7 +80,7 @@ void clIn::runState(void) {
         case 10:
             if (GetStatus() == false) {
                 u16Status = 0;
-            } else if (millis() > (u32Timer + u32Entprellzeit)) {
+            } else if (millis() - u32Timer >= u32Entprellzeit) {
                 bShort = true;
                 u32Timer = millis();
                 u16Status = 20;	
@@ -89,7 +89,7 @@ void clIn::runState(void) {
         case 20:
             if (GetStatus() == false) {
                 u16Status = 0;	
-            } else if (millis() > (u32Timer + u32SwitchLongTime)) {
+            } else if (millis() - u32Timer >= u32SwitchLongTime) {
                 bLong = true;
                 u16Status = 30;
             }
