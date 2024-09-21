@@ -54,13 +54,8 @@ class clIn {
 		void decValue(uint16_t *, uint16_t, uint16_t, bool);
 		void runState(void);
 		
-		bool Status(void) {
-			return bShort;
-		}
-
-		bool StatusLong(void) {
-			return bLong;
-		}
+		bool Status(void) {return bShort;}
+		bool StatusLong(void) {return bLong;}
 
 	private:
 		bool GetStatus(void);
@@ -81,9 +76,9 @@ class clIn {
 		bool bLong;
 
 		uint32_t u32Entprellzeit;
-    	uint32_t u32SwitchLongTime;
-    	POLARITY polarity;
-    	uint16_t u16Mode;
+   	uint32_t u32SwitchLongTime;
+   	POLARITY polarity;
+   	uint16_t u16Mode;
 		uint16_t u16Pin; 
 };
 

@@ -4,11 +4,12 @@
  *  Created on: 02.05.2024
  *      Author: Peter Schneider
  */
+#include <string.h>
 
-#include <TFT_eSPI.h>
 #include "tft.h"
 
-cDisplay::cDisplay(uint8_t _rotation, uint32_t _backGroundColor, uint32_t _textColor) {
+cDisplay::cDisplay(uint8_t _rotation, uint32_t _backGroundColor, uint32_t _textColor)
+{ 
   u8Rotation         = _rotation;
   u32BackGroundColor = _backGroundColor;
   u32FontColor       = _textColor;
@@ -18,6 +19,9 @@ cDisplay::cDisplay(uint8_t _rotation, uint32_t _backGroundColor, uint32_t _textC
   setSwapBytes(true);				// used by push image function
 	setRotation(u8Rotation);
   fillScreen(u32BackGroundColor);
+
+  ScrollArea.createSprite(DISP_WIDTH - (2 * W_SPACE), 20);
+  ScrollArea.setFreeFont(DEFAULT_FONT);
 }       
 
 // ---------------------------------------------------------------------------------------------------
@@ -29,7 +33,7 @@ void cDisplay::showFrame(void) {
   drawRoundRect(1, Y_MIDDLE, DISP_WIDTH - 1, H_MIDDLE, 10, TFT_BLUE);
   drawRoundRect(1, Y_BOTTOM, DISP_WIDTH - 1, H_BOTTOM, 10, TFT_BLUE);
 
-  showUpperSection("WebRadio - ESP32 / VS1053");
+  showInfoLine("WebRadio - ESP32 / VS1053");
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -64,19 +68,19 @@ void cDisplay::showStation(const station_t* _strData) {
 	
   // clear actual string
   setTextColor(TFT_BLACK, TFT_BLACK);
-  drawString(strOld, W_SPACE, Y_MIDDLE + H_SPACE, 1);
+  drawString(strOld, W_SPACE, MAIN_LINE_1, 1);
 
   // draw new string
   setTextColor(TFT_YELLOW, TFT_BLACK);
-  drawString(strNew, W_SPACE, Y_MIDDLE + H_SPACE, 1);
+  drawString(strNew, W_SPACE, MAIN_LINE_1, 1);
 
   strcpy(strOld, strNew);
 }
 
 // ---------------------------------------------------------------------------------------------------
-// owerSection upper line
+// section upper line
 // ---------------------------------------------------------------------------------------------------
-void cDisplay::showUpperSection(const char* _strData) {
+void cDisplay::showInfoLine(const char* _strData) {
   setFreeFont(DEFAULT_FONT);
 	
   // draw new string
@@ -98,25 +102,44 @@ void cDisplay::showVolume(uint16_t _u16Vol) {
 	
   // write start of line
   if (u16FirstRun == 1) {
-    drawRightString("Vol.: ", DISP_WIDTH - (W_SPACE + 28), Y_MIDDLE + H_SPACE, 1);
+    drawRightString("Vol.: ", DISP_WIDTH - (W_SPACE + 28), MAIN_LINE_1, 1);
     u16FirstRun = 0;
   }
 
   // clear actual string
   setTextColor(TFT_BLACK, TFT_BLACK);
-  drawRightString(strOld, DISP_WIDTH - W_SPACE, Y_MIDDLE + H_SPACE, 1);
+  drawRightString(strOld, DISP_WIDTH - W_SPACE, MAIN_LINE_1, 1);
 
   // draw new string
   setTextColor(TFT_YELLOW, TFT_BLACK);
-  drawRightString(strNew, DISP_WIDTH - W_SPACE, Y_MIDDLE + H_SPACE, 1);
+  drawRightString(strNew, DISP_WIDTH - W_SPACE, MAIN_LINE_1, 1);
 
   strcpy(strOld, strNew);
 }
 
 // ---------------------------------------------------------------------------------------------------
+// show actual bitrate
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::showBitrate(String strData) {
+	char cData[31];
+	
+  strData.toCharArray(cData, 30, 0);		
+
+	setFreeFont(DEFAULT_FONT);
+	
+  // clear actual string
+  setTextColor(TFT_BLACK, TFT_BLACK);
+  drawString("                               ", W_SPACE, MAIN_LINE_2, 1);
+
+  // draw new string
+  setTextColor(TFT_YELLOW, TFT_BLACK);
+  drawString(cData, W_SPACE, MAIN_LINE_2, 1);
+}
+
+// ---------------------------------------------------------------------------------------------------
 // show lower section
 // ---------------------------------------------------------------------------------------------------
-void cDisplay::showLowerSection(const char* _strData) {
+void cDisplay::showStatusLine(const char* _strData) {
 	static char strOld[40] = {"                                       "};
 			
 	setFreeFont(DEFAULT_FONT);
@@ -139,32 +162,25 @@ void cDisplay::showLowerSection(const char* _strData) {
 void cDisplay::showSongTitle(const char* _strData) {
 
   uint16_t u16TextWidth;
+  bStopScroll = true;
 
-  setFreeFont(DEFAULT_FONT);
+  ScrollArea.setFreeFont(DEFAULT_FONT);
 
   strlcpy(strTitleNew, _strData, sizeof(strTitleNew));
   
   u16TextWidth = textWidth(_strData);
-  Serial.println(_strData);
-
+  
   if (u16TextWidth > 296) {
-    truncateStringToWidth(_strData, strTitleNew, 250);//Y_PLACE);
-    u16TextWidth = textWidth(strTitleNew);
-    Serial.print(String(F("Textbreite - ")));
-    Serial.println(u16TextWidth);
+    setScrollStr(_strData, MAIN_LINE_6);
+    bStopScroll = false;
+  } else {
+    ScrollArea.fillSprite(TFT_BLACK);
+    
+    // draw new string
+    setTextColor(TFT_YELLOW, TFT_BLACK);
+    ScrollArea.drawCentreString(strTitleNew, 150, 0, 1);
+    ScrollArea.pushSprite(W_SPACE, MAIN_LINE_6);
   }
-
-  Serial.println(strTitleNew);
-  
-  // clear actual string
-  setTextColor(TFT_BLACK, TFT_BLACK);
-  drawCentreString(strTitleOld, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
-
-  // draw new string
-  setTextColor(TFT_YELLOW, TFT_BLACK);
-  drawCentreString(strTitleNew, DISP_WIDTH / 2, Y_MIDDLE + H_MIDDLE - 3 * H_SPACE, 1);
-  
-  strlcpy(strTitleOld, strTitleNew, sizeof(strTitleOld));
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -174,7 +190,7 @@ void cDisplay::truncateStringToWidth(const char* _str, char* _strResult, uint16_
   uint16_t i = 0;
   actWidth = 0;
   charWidth = 0;
-
+  
   charWidth = textWidth(_str);
   Serial.print(String(F("Textbreite org. - ")));
   Serial.println(charWidth);
@@ -200,44 +216,82 @@ out:
 }
 
 // ---------------------------------------------------------------------------------------------------
+// set scroll text
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::setScrollStr(const char* cString, uint16_t u16Line) {
+  strcpy(strScroll, cString);
+  strcat(strScroll, "  ***  ");         // put char to the end of the string
+  
+  u16LineNumber = u16Line;
+  bNewStringToScroll = true;
+}
+
+// ---------------------------------------------------------------------------------------------------
 // scroll text
 // ---------------------------------------------------------------------------------------------------
-void cDisplay::scrollText(const char* _myString, uint16_t _scrollWidth, uint16_t _scrollSpeed, uint16_t _textWidth, uint16_t _xPos) {
+//                       0                   30
+// display               [-------------------]
+//          0            x --->              y                   i - 1 
+// char    [-------------[-------------------]-------------------]
+//                            text scroll       
+// ---------------------------------------------------------------------------------------------------
+void cDisplay::scrollText(void) {
+  static uint32_t u32Timer = 0;
   static uint16_t u16State = 0;
-  static uint16_t startX = 0;
+  static uint16_t u16Length = 0;
+  
+  static char cStrToShow[100];
+  
   static uint16_t i = 0;
 
-  uint16_t charWidth = 0;
-  char currentChar;
+  if (bStopScroll) {
+    return;
+  }
+
+  // check for new string
+  if (bNewStringToScroll) {
+    bNewStringToScroll = false;
+    u16State = 0;
+  }
 
   switch (u16State) {
-    case 0:         // int scroll area
-      fillRect(0, 0, _scrollWidth, fontHeight(), TFT_BLACK);
-      startX = _scrollWidth;     // set start position of string to scroll
+    case 0:         // check for string length
+      u16Length = strlen(strScroll);
       i = 0;
       u16State = 10;
       break;
-    case 10:
-      currentChar = _myString[i];
-      charWidth = textWidth(String(currentChar));
-      if (startX + charWidth > 0 && startX < _scrollWidth) {
-        setCursor(startX, 0);
-        print(currentChar);
+    case 10:        // scroll text
+      // clear actual string
+      ScrollArea.fillSprite(TFT_BLACK);
+      
+      // calc new text to show
+      if (i > u16Length) {
+        i = 0;
       }
-    
-      startX += charWidth;
-      if (startX >= _scrollWidth) {
-        u16State = 20;
+
+      strncpy(cStrToShow, &strScroll[i], 40);
+      
+      if (i > u16Length - 40) {
+          strncpy(&cStrToShow[u16Length - i], strScroll, 40 - (u16Length - i));  
       }
+     
+      i++;
+      
+      // draw new string
+      ScrollArea.setTextColor(TFT_YELLOW, TFT_BLACK);
+      //ScrollArea.drawCentreString(cStrToShow, 150, 0, 1);
+      ScrollArea.drawString(cStrToShow, 0, 0, 1);
+      ScrollArea.pushSprite(W_SPACE, u16LineNumber);
+      
+      u32Timer = millis();
+      u16State = 20;
       break;
     case 20:
-      _xPos -= _scrollSpeed;
-
-      // Wenn der Text vollständig aus dem sichtbaren Bereich herausgelaufen ist, 
-      // setze die x-Position zurück
-      if (_xPos + _textWidth < 0) {
-        _xPos = _scrollWidth;
-      }
+        if (millis() >= u32Timer + 150) {
+          u16State = 10;    
+        }      
+        break;
+    default:
       break;  
   }
 }

@@ -7,9 +7,12 @@
  * @copyright Copyright (c) 2024
  */
 
+// teste auch diese Version
+// https://github.com/CelliesProjects/ESP32_VS1053_Stream/blob/master/examples/simple/simple.ino
+// https://duino4projects.com/hifi-online-radio-internet-streaming-with-esp32-and-vs1053/
+
 #include <vs1053_ext.h>
 #include <WiFiManager.h>
-#include <TFT_eSPI.h>
 #include <Preferences.h>    // for reading and writing into the ROM memory
 
 #include "WebRadio.h"
@@ -46,12 +49,12 @@ const station_t StationList[ST_MAX] PROGMEM = {
   {8,  "Hit Radio FFH",       "http://mp3.ffh.de/radioffh/hqlivestream.mp3"},                            
   {9,  "Radio Arabella",      "https://live.radioarabella.de/stream"},
   {10, "80er-Kulthits",       "http://mp3channels.webradio.antenne.de/80er-kulthits"},
-  {11, "BR Klassik",          "http://streams.br.de/br-klassik_2.m3u"},
-  {12, "Die neue Welle",      "http://www.meine-neue-welle.de/dnw_128.m3u"},
-  {13, "Radio BoB AC/DC",     "http://streams.radiobob.de/bob-acdc/mp3-128/streams.radiobob.de/"},
-  {14, "Rock Antenne",        "http://mp3channels.webradio.antenne.de/rockantenne"},
-  {15, "BR Oldies",           "http://streams.br.de/bayern1_2.m3u"},
-  {16, "BR Pop/Rock",         "http://streams.br.de/bayern3_2.m3u"}
+  {11, "Die neue Welle",      "http://www.meine-neue-welle.de/dnw_128.m3u"},
+  {12, "Radio BoB AC/DC",     "http://streams.radiobob.de/bob-acdc/mp3-128/streams.radiobob.de/"},
+  {13, "Rock Antenne",        "http://mp3channels.webradio.antenne.de/rockantenne"},
+  {14, "BR Oldies",           "http://streams.br.de/bayern1_2.m3u"},
+  {15, "BR Pop/Rock",         "http://streams.br.de/bayern3_2.m3u"},
+  {16, "BR Klassik",          "http://streams.br.de/br-klassik_2.m3u"}
 }; 
 
 VS1053      mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO, VS1053_SCK);
@@ -84,12 +87,13 @@ void setup() {
   tft.showFrame();
 
   Serial.println(client.localIP());
-  tft.showLowerSection(strLocalIp.c_str());
+  tft.showStatusLine(strLocalIp.c_str());
 
   pref.begin("WebRadio", false);
-  u16Vol = pref.getShort("Vol", 2);
+  u16Station = pref.getShort("Station", 0);
+  u16Vol     = pref.getShort("Vol", 0);
+
   tft.showVolume(u16Vol);
-  u16Station = pref.getShort("Station", 2);
   tft.showStation(&StationList[u16Station]);
   
   // init VS1053 player
@@ -97,19 +101,20 @@ void setup() {
   mp3.setVolumeSteps(MP3_VOL_MAX);
   mp3.setVolume(u16Vol);
   mp3.setTone(&u8Tone);
-  mp3.connecttohost(StationList[u16Station].Url);  // start with last station
+  mp3.connecttohost(StationList[u16Station].Url);     // start with last station
 
   tft.showStation(&StationList[u16Station]);
 
-  Serial.println(F(".. WebRadio init done"));          // Debug  
+  Serial.println(F(".. WebRadio init done"));         // Debug  
               
   Serial.println( );
   led2.On();
 }
 
 void loop() { 
-  mp3.loop();             // mp3 Steuerung und Wiedergabe
+  mp3.loop();             // mp3 control an play
   gpioHandling();       
+  tft.scrollText();
 }
 
 // -----------------------------------------------------------------------------------
@@ -142,13 +147,41 @@ void printCpuInfo(void) {
 // gpio handling
 // -----------------------------------------------------------------------------------
 void gpioHandling(void) {
-  sw1.runState();
-	sw2.runState();
-  sw3.runState();
-	sw4.runState();
+  static uint16_t u16State = 0;
+  static uint32_t u32Timer;
 
-  changeVol();          
-  changeStation();
+  switch (u16State) {
+    case 0:
+      u32Timer = millis();
+      u16State = 10;  
+      break;
+    case 10:
+      if (millis() >= u32Timer + 10) {
+        sw2.incValue(&u16Vol, MP3_VOL_MAX, 1, false);
+        sw1.decValue(&u16Vol, MP3_VOL_MAX, 1, false);
+        u32Timer = millis();
+        u16State = 20;
+      }
+      break;
+    case 20:
+      if (millis() >= u32Timer + 10) {
+        sw4.incValue(&u16Station, ST_MAX - 1, 1, true);
+        sw3.decValue(&u16Station, ST_MAX - 1, 1, true);
+        u32Timer = millis();
+        u16State = 30;  
+      }
+      break;
+    case 30:
+      if (millis() >= u32Timer + 10) {
+        changeVol();          
+        changeStation();
+        u16State = 0;
+      }
+      break;
+    default:
+      u16State = 0;
+      break;
+  }
 
   // toggle LED 3 -- only for debugging
   if (millis() > u32DebugTimer + 1000) {
@@ -163,20 +196,25 @@ void gpioHandling(void) {
 void changeVol(void) {
   static uint16_t u16State = 0;
   static uint16_t u16VolOld = 1;
- 
+  static uint32_t u32TimeOut = 0;
+
   switch (u16State) {
     case 0:
-      sw2.incValue(&u16Vol, MP3_VOL_MAX, 1, false);
-      sw1.decValue(&u16Vol, MP3_VOL_MAX, 1, false);
       if (u16VolOld != u16Vol) {
+        u32TimeOut = millis();
         u16State = 10;
       }
       break;
     case 10:
+      if (millis() > u32TimeOut + 20) {
+        u16State = 20;
+      }
+      break;
+    case 20:
       mp3.setVolume(u16Vol);
       pref.putShort("Vol", u16Vol);
       tft.showVolume(u16Vol);
-      Serial.print(F("Vol     - "));
+      Serial.print(F("Vol - "));
       Serial.println(u16Vol);
       u16VolOld = u16Vol;
       u16State = 0;
@@ -197,8 +235,6 @@ void changeStation(void) {
 
   switch (u16State) {
     case 0:
-      sw4.incValue(&u16Station, ST_MAX - 1, 1, true);
-      sw3.decValue(&u16Station, ST_MAX - 1, 1, true);
       if (u16StationOld != u16Station) {
         SpeakerOn.Off();
         u32TimeOut = millis();   
@@ -206,7 +242,7 @@ void changeStation(void) {
       }
       break;
     case 10:
-      if (millis() > u32TimeOut + 100) {
+      if (millis() > u32TimeOut + 20) {
         u16State = 20;
       }
       break;
@@ -286,16 +322,17 @@ void vs1053_showstreamtitle(const char *info) {     // called from vs1053
     tft.showSongTitle(info);
 }
 
+void vs1053_bitrate(const char *br) {               // called from vs1053
+    String strData = String("Bitrate: ") + String((String(br).toInt() / 1000)) + String("kBit/s");
+    Serial.println(strData);                        // bitrate of current stream
+    tft.showBitrate(strData);
+}
+
 /*
 void vs1053_showstation(const char *info) {         // called from vs1053
     Serial.print("STATION:      ");
     Serial.println(info);                           // Show station name
     showStation(info);
-}
-
-void vs1053_bitrate(const char *br) {               // called from vs1053
-    Serial.print("BITRATE:      ");
-    Serial.println(String(br)+"kBit/s");            // bitrate of current stream
 }
 
 void vs1053_showstreaminfo(const char *info) {      // called from vs1053

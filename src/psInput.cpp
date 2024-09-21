@@ -64,7 +64,7 @@ void clIn::initData(void) {
 void clIn::runState(void) {
 
     if (u16Status != u16StatusOld) {
-        //Serial.println(String("Input " + String(u16InCount) + String(" Status - " + String(u16Status))));
+        Serial.println(String("Input " + String(u16InCount) + String(" Status - " + String(u16Status))));
         u16StatusOld = u16Status;
     }
 
@@ -114,6 +114,8 @@ bool clIn::GetStatus(void) {
 }
 
 void clIn::incValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool bStartAt0) {
+    runState();
+
     switch (u16IncValueState) {
         case 0:    
             if (Status()) {   
@@ -141,6 +143,8 @@ void clIn::incValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool 
 }
 
 void clIn::decValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool _bStartAtMax) {
+    runState();
+    
     switch (u16DecValueState) {
         case 0:    
             if (Status()) {   
