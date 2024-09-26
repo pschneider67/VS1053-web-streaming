@@ -7,7 +7,19 @@
 
 #pragma once
 
+#include "Arduino.h"
+#include "WiFiManager.h"
+
 #define UNDEFINED  -1
+
+// mp3 radio
+#define ST_MAX      16               
+#define MP3_VOL_MAX 50
+typedef struct {
+  uint16_t Number;
+  char     Name[40]; 
+  char     Url[100];
+} station_t;
 
 // define LED's
 #define LED_1   22
@@ -39,6 +51,8 @@ void printCpuInfo(void);
 void gpioHandling(void);
 void changeVol(void);
 void changeStation(void);
+void getStationList(station_t*);
+void setStationList(station_t*);
 
 // data from VS1053
 void vs1053_info(const char *info);                 

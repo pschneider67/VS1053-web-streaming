@@ -1,0 +1,167 @@
+Um drei Buttons in deiner Webseite zu integrieren, die auf dem ESP32 spezifische Aktionen ausführen, musst du sowohl die HTML-Seite erweitern als auch auf dem ESP32 die entsprechenden Routen (Endpoints) hinzufügen, die die Button-Aktionen behandeln.
+1. HTML erweitern
+
+Du kannst drei Buttons mit jeweils einem eigenen onclick-Handler hinzufügen, der eine Anfrage an den ESP32 sendet, um die entsprechenden Aktionen auszulösen.
+
+So könnte deine HTML-Struktur aussehen:
+
+cpp
+
+String webpage = R"(
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body {font-family: Arial, sans-serif; background-color: #f0f0f0; padding: 5px;}
+      h1 {color: #333; text-align: center;}
+      form {background-color: #fff; max-width: 800px; margin: 0 auto; padding: 5px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);}
+      label {display: block; margin-bottom: 5px; font-size: 16px; color: #333;}
+      input[type="text"], input[type="submit"] {width: 100%; padding: 5px; margin-bottom: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;}
+      input[type="submit"] {background-color: #4CAF50; color: white; border: none; cursor: pointer;}
+      input[type="submit"]:hover {background-color: #45a049;}
+      button {padding: 10px 20px; margin: 10px; background-color: #008CBA; color: white; border: none; cursor: pointer; border-radius: 5px;}
+      button:hover {background-color: #005f6b;}
+    </style>
+    <title>ESP32 Radio</title>
+  </head>
+
+  <body>
+    <h1>ESP32 Radio - Sender einstellen</h1>
+    <form action="/set">
+      <table cellspacing=20px>
+        <colgroup>
+          <col width="30" padding=5px>
+          <col width="150" padding=5px>
+          <col width="510" padding=5px>
+        </colgroup>
+
+        <tr>
+          <th>Sender Nr.</th>
+          <th>Name</th>
+          <th>Web Adresse</th>
+        </tr>
+        %s
+      </table>
+      <input type="submit" value="Speichern">
+    </form>
+
+    <!-- Neue Buttons -->
+    <div style="text-align:center;">
+      <button onclick="sendAction('/play')">Play</button>
+      <button onclick="sendAction('/pause')">Pause</button>
+      <button onclick="sendAction('/stop')">Stop</button>
+    </div>
+
+    <script>
+      function sendAction(action) {
+        fetch(action)
+        .then(response => {
+          if (!response.ok) {
+            alert('Fehler: ' + response.status);
+          } else {
+            alert('Aktion erfolgreich ausgeführt: ' + action);
+          }
+        })
+        .catch(error => {
+          alert('Fehler: ' + error);
+        });
+      }
+    </script>
+
+  </body>
+
+</html>
+)";
+
+Erklärung:
+
+    Drei Buttons hinzufügen:
+        <button onclick="sendAction('/play')">Play</button>: Dieser Button sendet eine Anfrage an den /play-Endpoint.
+        <button onclick="sendAction('/pause')">Pause</button>: Dieser Button sendet eine Anfrage an den /pause-Endpoint.
+        <button onclick="sendAction('/stop')">Stop</button>: Dieser Button sendet eine Anfrage an den /stop-Endpoint.
+
+    JavaScript:
+        Die Funktion sendAction(action) führt eine fetch()-Anfrage an den angegebenen Endpoint aus, um die gewünschte Aktion auszuführen.
+        Wenn die Anfrage erfolgreich ist, zeigt ein alert eine Erfolgsmeldung an. Bei einem Fehler wird eine Fehlermeldung angezeigt.
+
+2. ESP32-Server-Code erweitern
+
+Nun musst du die entsprechenden Endpoints auf deinem ESP32-Webserver definieren, um die Aktionen zu verarbeiten.
+
+Beispielsweise könntest du diese Routen in deinem ESP32-C++-Code hinzufügen:
+
+cpp
+
+#include <WiFi.h>
+#include <WebServer.h>
+
+WebServer server(80);
+
+const char* ssid = "Dein_SSID";
+const char* password = "Dein_Passwort";
+
+void handlePlay() {
+  // Hier kannst du den Code für das Abspielen einfügen
+  Serial.println("Play gestartet");
+  server.send(200, "text/plain", "Play gestartet");
+}
+
+void handlePause() {
+  // Hier kannst du den Code für Pause einfügen
+  Serial.println("Pause gestartet");
+  server.send(200, "text/plain", "Pause gestartet");
+}
+
+void handleStop() {
+  // Hier kannst du den Code für Stop einfügen
+  Serial.println("Stop gestartet");
+  server.send(200, "text/plain", "Stop gestartet");
+}
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Verbinde dich mit dem WLAN
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Verbinde...");
+  }
+  Serial.println("Verbunden!");
+
+  // Standard-Route für die Webseite
+  server.on("/", HTTP_GET, []() {
+    server.send(200, "text/html", webpage);
+  });
+
+  // Endpoints für die Buttons
+  server.on("/play", HTTP_GET, handlePlay);
+  server.on("/pause", HTTP_GET, handlePause);
+  server.on("/stop", HTTP_GET, handleStop);
+
+  // Webserver starten
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
+
+Erklärung der ESP32-Logik:
+
+    Endpoints für die Buttons:
+        handlePlay: Wird ausgeführt, wenn der Play-Button gedrückt wird.
+        handlePause: Wird ausgeführt, wenn der Pause-Button gedrückt wird.
+        handleStop: Wird ausgeführt, wenn der Stop-Button gedrückt wird.
+
+    Webserver-Konfiguration:
+        Der Server verarbeitet Anfragen von der Webseite und reagiert auf die Button-Drücke mit den definierten Handlers (handlePlay, handlePause, handleStop).
+
+Zusammenfassung:
+
+    In der HTML-Datei wurden drei Buttons hinzugefügt, die über JavaScript eine Anfrage an den ESP32 senden.
+    Auf dem ESP32-Webserver wurden Endpoints für diese Aktionen hinzugefügt, die auf die Button-Klicks reagieren.
+
+Auf diese Weise kannst du durch das Drücken der Buttons Aktionen auf dem ESP32 ausführen.
+Ist dieses Ges

@@ -4,9 +4,8 @@
  *  Created on: 02.05.2024
  *      Author: Peter Schneider
  */
-#include <string.h>
-
-#include "tft.h"
+#include "WebRadio.h"
+#include "psTft.h"
 
 cDisplay::cDisplay(uint8_t _rotation, uint32_t _backGroundColor, uint32_t _textColor)
 { 
@@ -58,7 +57,7 @@ void cDisplay::showMain(const char* _strData) {
 // ---------------------------------------------------------------------------------------------------
 // show station
 // ---------------------------------------------------------------------------------------------------
-void cDisplay::showStation(const station_t* _strData) {
+void cDisplay::showStation(station_t* _strData) {
   static char strOld[40] = {"                                       "};
   char strNew[40];
 
@@ -261,8 +260,7 @@ void cDisplay::scrollText(void) {
       u16State = 10;
       break;
     case 10:        // scroll text
-      // clear actual string
-      ScrollArea.fillSprite(TFT_BLACK);
+      ScrollArea.fillSprite(TFT_BLACK); 
       
       // calc new text to show
       if (i > u16Length) {

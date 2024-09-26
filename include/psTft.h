@@ -1,5 +1,5 @@
 /*
- * tft.h
+ * psTft.h
  *
  *  Created on: 02.05.2024
  *      Author: Peter Schneider
@@ -24,6 +24,9 @@
 // ----------------------------------------------------			240
 // 0|240                                        320|240
 
+#pragma once
+
+#include <string.h>
 #include <TFT_eSPI.h>
 #include "Free_Fonts.h"
 
@@ -34,12 +37,6 @@
 #define ROTATION_270 3
 
 #define DEFAULT_FONT	FF17
-
-typedef struct {
-  uint16_t Number;
-  char     Name[40]; 
-  char     Url[100];
-} station_t;
 
 class cDisplay : public TFT_eSPI {
 	public:
@@ -74,7 +71,7 @@ class cDisplay : public TFT_eSPI {
 		void showStatusLine(const char*);
 		void showFrame(void);
 		void showMain(const char*);
-		void showStation(const station_t*);
+		void showStation(station_t*);
 		void showVolume(uint16_t);
 		void showBitrate(String);
 		void scrollText(void);

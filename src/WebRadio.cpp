@@ -11,14 +11,18 @@
 // https://github.com/CelliesProjects/ESP32_VS1053_Stream/blob/master/examples/simple/simple.ino
 // https://duino4projects.com/hifi-online-radio-internet-streaming-with-esp32-and-vs1053/
 
+#include <Arduino.h>
 #include <vs1053_ext.h>
 #include <WiFiManager.h>
+#include <WebServer.h>
 #include <Preferences.h>    // for reading and writing into the ROM memory
 
 #include "WebRadio.h"
-
 #include "psGpio.h"
-#include "tft.h"
+#include "psTft.h"
+#include "psServer.h"
+
+extern WebServer server;
 
 // LED output
 clOut led1(LED_1, POLARITY::POS);
@@ -34,11 +38,7 @@ clIn sw2(SW_2, 40, 2000, POLARITY::NEG);
 clIn sw3(SW_3, 40, 2000, POLARITY::NEG);
 clIn sw4(SW_4, 40, 2000, POLARITY::NEG);
 
-// mp3 radio
-#define ST_MAX      16               
-#define MP3_VOL_MAX 50
-
-const station_t StationList[ST_MAX] PROGMEM = {
+station_t StationList[ST_MAX] = {
   {1,  "HR-Info",             "https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high"},                 
   {2,  "HR 1",                "https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high"},  
   {3,  "HR 3",                "https://dispatcher.rndfnk.com/hr/hr3/mittelhessen/high"},                   
@@ -57,11 +57,12 @@ const station_t StationList[ST_MAX] PROGMEM = {
   {16, "BR Klassik",          "http://streams.br.de/br-klassik_2.m3u"}
 }; 
 
-VS1053      mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO, VS1053_SCK);
-cDisplay    tft(ROTATION_90, TFT_BLACK, TFT_WHITE);
-WiFiManager wifiManager;
-WiFiClient  client;
-Preferences pref;
+VS1053        mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO, VS1053_SCK);
+cDisplay      tft(ROTATION_90, TFT_BLACK, TFT_WHITE);
+WiFiManager   wifiManager;
+WiFiClient    client;
+Preferences   pref;
+WebServer     server(80);
 
 uint32_t u32DebugTimer = 0;
 
@@ -79,10 +80,11 @@ void setup() {
 	Serial.println(F("---------------------------"));
 
   printCpuInfo();
-    
+  
   led1.On();
   initWifi();
-
+  serverInit();
+ 
   // init config 
   tft.showFrame();
 
@@ -92,6 +94,8 @@ void setup() {
   pref.begin("WebRadio", false);
   u16Station = pref.getShort("Station", 0);
   u16Vol     = pref.getShort("Vol", 0);
+ 
+  getStationList(StationList);
 
   tft.showVolume(u16Vol);
   tft.showStation(&StationList[u16Station]);
@@ -115,6 +119,34 @@ void loop() {
   mp3.loop();             // mp3 control an play
   gpioHandling();       
   tft.scrollText();
+  server.handleClient();
+}   
+
+void getStationList(station_t* pStationList) {
+  for (int i = 0; i < ST_MAX; i++) {
+    String key = "strStation" + String(i); 
+    String strDummy = pref.getString(key.c_str(), "unknown");  
+    strDummy.toCharArray(pStationList[i].Name, 40); 
+    //Serial.println("Gelesen: " + String(pStationList[i].Name) + " mit key: " + key);
+
+    key = "strUrl" + String(i); 
+    strDummy = pref.getString(key.c_str(), "unknown");  
+    strDummy.toCharArray(pStationList[i].Url, 100); 
+    //Serial.println("Gelesen: " + String(pStationList[i].Url) + " mit key: " + key);
+  }
+}
+
+void setStationList(station_t* pStationList) {
+  for (int i = 0; i < ST_MAX; i++) {
+    String key = "strStation" + String(i);  
+    pref.putString(key.c_str(), pStationList[i].Name);  
+    //Serial.println("Gespeichert: " + String(pStationList[i].Name) + " mit key: " + key);
+
+    key = "strUrl" + String(i);  
+    pref.putString(key.c_str(), pStationList[i].Url);  
+    //Serial.println("Gespeichert: " + String(pStationList[i].Url) + " mit key: " + key);
+  }
+  tft.showStation(&StationList[u16Station]);
 }
 
 // -----------------------------------------------------------------------------------
@@ -236,7 +268,7 @@ void changeStation(void) {
         mp3.connecttohost(StationList[u16Station].Url);
         pref.putShort("Station", u16Station);
         tft.showStation(&StationList[u16Station]);
-        Serial.print(String(F("Station - ")) + String(u16Station));
+        Serial.println(String(F("Station - ")) + String(u16Station));
         u16StationOld = u16Station;
         u32TimeOut = millis();  
         u16State = 10;
@@ -290,8 +322,7 @@ void  initWifi(void) {
 void wifiCallback(WiFiManager *_myWiFiManager) {
 	tft.fillScreen(TFT_BLACK);
 	tft.drawString(F(".. enter wifi config mode"), 10, 10);
-  String strText = String(".. ") + _myWiFiManager->getConfigPortalSSID();
-  tft.drawString(strText, 10, 30);
+  tft.drawString(String(".. ") + _myWiFiManager->getConfigPortalSSID(), 10, 30);
   tft.drawString(F("-- IP 192.168.4.1"), 10, 70);
 }
 
@@ -303,7 +334,7 @@ void saveConfigCallback(void) {
 // optional infos
 // ---------------------------------------------------------------------------------------------------
 void vs1053_info(const char *info) {                // called from vs1053
-    //Serial.print("DEBUG:        ");
+    Serial.print("DEBUG:        ");
     Serial.println(info);                           // debug infos
 }
 
