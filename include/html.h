@@ -14,7 +14,7 @@ String webpage = R"(
         font-family: 
         Arial, sans-serif; 
         background-color: #f0f0f0; 
-        padding: 5px;
+        padding: 5px; 
       }
       h1 {
         color: #333; 
@@ -24,21 +24,21 @@ String webpage = R"(
         background-color: #fff; 
         max-width: 800px; 
         margin: 0 auto; 
-        padding: 5px;  
-        border-radius: 5px; 
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        padding: 2px;  
+        border-radius: 4px; 
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
       }
       label {
         display: block;  
-        margin-bottom: 5px; 
+        margin-bottom: 2px; 
         font-size: 16px; 
         color: #333;
       }
       input[type="text"], input[type="submit"] {
         width: 100%; 
-        padding: 5px;  
-        margin-bottom: 5px;  
-        border-radius: 5px;  
+        padding: 2px;  
+        margin-bottom: 2px;  
+        border-radius: 4px;  
         border: 1px solid #ccc; 
         font-size: 16px;
       }
@@ -56,10 +56,10 @@ String webpage = R"(
   </head>
  
   <body>
-    <h1>ESP32 Radio - Sender einstellen</h1>
+    <h1>ESP32 WebRadio - Sender</h1>
     <form action="/set">
     
-      <table cellspacing=20px>
+      <table cellspacing=10px>
         <colgroup>
           <col width="30", padding=5px>
           <col width="150", padding=5px>

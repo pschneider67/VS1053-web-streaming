@@ -114,7 +114,7 @@ bool clIn::GetStatus(void) {
     }
 }
 
-void clIn::incValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool bStartAt0) {
+void clIn::incValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool bStartAt0, bool bLong) {
     runState();
 
     switch (u16IncValueState) {
@@ -134,16 +134,23 @@ void clIn::incValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool 
         case 5:
             if (!Status()) {
                 u16IncValueState = 0;
+            } else if (StatusLong() & bLong) {
+                u32TimerInc = millis();
+                u16IncValueState = 10;      
             }  
             break;
-    
+        case 10:
+            if ((millis() - u32TimerInc) >= 200) {
+                u16IncValueState = 0;
+            }
+            break;    
         default:
             u16IncValueState = 0;
             break; 
     }
 }
 
-void clIn::decValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool _bStartAtMax) {
+void clIn::decValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool _bStartAtMax, bool bLong) {
     runState();
     
     switch (u16DecValueState) {
@@ -162,9 +169,16 @@ void clIn::decValue(uint16_t *_pValue, uint16_t _valueMax, uint16_t _step, bool 
         case 5:
             if (!Status()) {
                 u16DecValueState = 0;
-            }  
+            } else if (StatusLong() & bLong) {
+                u32TimerInc = millis();
+                u16DecValueState = 10;
+            } 
             break;
-    
+        case 10:
+            if ((millis() - u32TimerInc) >= 200) {
+                u16DecValueState = 0;
+            }
+            break;
         default:
             u16DecValueState = 0;
             break; 

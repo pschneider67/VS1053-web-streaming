@@ -24,10 +24,8 @@ String createInputFields() {
     k = i + 1;
     inputForm += "<tr>";
     inputForm += "<td><label type='text' for='str" + String(k) + "'>" + String(k) + "</label></td>";
-    inputForm += "<td><input type='text' id='Station_" + String(k) + "' name='St";
-    inputForm +=     String(k) + "' value='[[string" + String(k) + "]]'></td>";
-    inputForm += "<td><input type='text' id='url_" + String(k) + "' name='url";
-    inputForm +=     String(k) + "' value='[[url" + String(k) + "]]'></td>";
+    inputForm += "<td><input type='text' id='Station_" + String(k) + "' name='St" + String(k) + "' value='[[string" + String(k) + "]]'></td>";
+    inputForm += "<td><input type='text' id='url_" + String(k) + "' name='url" + String(k) + "' value='[[url" + String(k) + "]]'></td>";
     inputForm += "</tr>";
   }
 

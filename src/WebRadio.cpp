@@ -33,10 +33,10 @@ clOut led3(LED_3, POLARITY::POS);
 clOut SpeakerOn(MUTE, POLARITY::POS);       // switch speaker on
 
 // switches
-clIn sw1(SW_1, 40, 2000, POLARITY::NEG);
-clIn sw2(SW_2, 40, 2000, POLARITY::NEG);
-clIn sw3(SW_3, 40, 2000, POLARITY::NEG);
-clIn sw4(SW_4, 40, 2000, POLARITY::NEG);
+clIn sw1(SW_1, 40, 1000, POLARITY::NEG);    // volume -
+clIn sw2(SW_2, 40, 1000, POLARITY::NEG);    // volume +
+clIn sw3(SW_3, 40, 1000, POLARITY::NEG);    // station -
+clIn sw4(SW_4, 40, 1000, POLARITY::NEG);    // station +
 
 station_t StationList[ST_MAX] = {
   {1,  "HR-Info",             "https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high"},                 
@@ -189,16 +189,16 @@ void gpioHandling(void) {
       break;
     case 10:
       if (millis() - u32Timer >= 10) {
-        sw2.incValue(&u16Vol, MP3_VOL_MAX, 1, false);
-        sw1.decValue(&u16Vol, MP3_VOL_MAX, 1, false);
+        sw2.incValue(&u16Vol, MP3_VOL_MAX, 1, false, true);
+        sw1.decValue(&u16Vol, MP3_VOL_MAX, 1, false, true);
         u32Timer = millis();
         u16State = 20;
       }
       break;
     case 20:
       if (millis() - u32Timer >= 10) {
-        sw4.incValue(&u16Station, ST_MAX - 1, 1, true);
-        sw3.decValue(&u16Station, ST_MAX - 1, 1, true);
+        sw4.incValue(&u16Station, ST_MAX - 1, 1, true, false);
+        sw3.decValue(&u16Station, ST_MAX - 1, 1, true, false);
         u32Timer = millis();
         u16State = 30;  
       }

@@ -50,8 +50,8 @@ class clIn {
 		
 		~clIn(){}
 
-		void incValue(uint16_t *, uint16_t, uint16_t, bool);
-		void decValue(uint16_t *, uint16_t, uint16_t, bool);
+		void incValue(uint16_t *, uint16_t, uint16_t, bool, bool);
+		void decValue(uint16_t *, uint16_t, uint16_t, bool, bool);
 		void runState(void);
 		
 		bool Status(void) {return bShort;}
@@ -77,6 +77,8 @@ class clIn {
 
 		uint32_t u32Entprellzeit;
    	uint32_t u32SwitchLongTime;
+		uint32_t u32TimerInc;
+		uint32_t u32TimerDec;
    	POLARITY polarity;
    	uint16_t u16Mode;
 		uint16_t u16Pin; 
