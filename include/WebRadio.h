@@ -53,6 +53,7 @@ void changeVol(void);
 void changeStation(void);
 void getStationList(station_t*);
 void setStationList(station_t*);
+void resetStationData(void);
 
 // data from VS1053
 void vs1053_info(const char *info);                 
