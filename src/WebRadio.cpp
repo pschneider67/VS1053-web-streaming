@@ -96,6 +96,7 @@ void setup() {
   u16Station = pref.getShort("Station", 0);
   u16Vol     = pref.getShort("Vol", 0);
  
+  resetStationData();
   getStationList(StationList);
   
   tft.showVolume(u16Vol);
