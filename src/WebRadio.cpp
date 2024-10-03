@@ -38,7 +38,8 @@ clIn sw2(SW_2, 40, 1000, POLARITY::NEG);    // volume +
 clIn sw3(SW_3, 40, 1000, POLARITY::NEG);    // station -
 clIn sw4(SW_4, 40, 1000, POLARITY::NEG);    // station +
 
-station_t StationList[ST_MAX] = {
+station_t StationList[ST_MAX];
+station_t StationListDefault[ST_MAX] = {
   {1,  "HR-Info",             "https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high"},                 
   {2,  "HR 1",                "https://dispatcher.rndfnk.com/hr/hr1/live/mp3/high"},  
   {3,  "HR 3",                "https://dispatcher.rndfnk.com/hr/hr3/mittelhessen/high"},                   
@@ -96,7 +97,7 @@ void setup() {
   u16Vol     = pref.getShort("Vol", 0);
  
   getStationList(StationList);
-
+  
   tft.showVolume(u16Vol);
   tft.showStation(&StationList[u16Station]);
   
@@ -125,14 +126,12 @@ void loop() {
 void getStationList(station_t* pStationList) {
   for (int i = 0; i < ST_MAX; i++) {
     String key = "strStation" + String(i); 
-    String strDummy = pref.getString(key.c_str(), "unknown");  
+    String strDummy = pref.getString(key.c_str(), "unknown name");  
     strDummy.toCharArray(pStationList[i].Name, 40); 
-    //Serial.println("Gelesen: " + String(pStationList[i].Name) + " mit key: " + key);
 
     key = "strUrl" + String(i); 
-    strDummy = pref.getString(key.c_str(), "unknown");  
+    strDummy = pref.getString(key.c_str(), "unknown url");  
     strDummy.toCharArray(pStationList[i].Url, 100); 
-    //Serial.println("Gelesen: " + String(pStationList[i].Url) + " mit key: " + key);
   }
 }
 
@@ -140,13 +139,20 @@ void setStationList(station_t* pStationList) {
   for (int i = 0; i < ST_MAX; i++) {
     String key = "strStation" + String(i);  
     pref.putString(key.c_str(), pStationList[i].Name);  
-    //Serial.println("Gespeichert: " + String(pStationList[i].Name) + " mit key: " + key);
+    Serial.println("Gespeichert: " + String(pStationList[i].Name) + " mit key: " + key);
 
     key = "strUrl" + String(i);  
     pref.putString(key.c_str(), pStationList[i].Url);  
-    //Serial.println("Gespeichert: " + String(pStationList[i].Url) + " mit key: " + key);
+    Serial.println("Gespeichert: " + String(pStationList[i].Url) + " mit key: " + key);
   }
+ 
   tft.showStation(&StationList[u16Station]);
+}
+
+void resetStationData(void) {
+  for (int i = 0; i < ST_MAX; i++) {
+    StationList[i] = StationListDefault[i];
+  }  
 }
 
 // -----------------------------------------------------------------------------------
@@ -182,6 +188,9 @@ void gpioHandling(void) {
   static uint16_t u16State = 0;
   static uint32_t u32Timer;
 
+  sw1.runState();
+  sw2.runState();
+
   switch (u16State) {
     case 0:
       u32Timer = millis();
@@ -205,10 +214,23 @@ void gpioHandling(void) {
       break;
     case 30:
       if (millis() - u32Timer >= 10) {
-        changeVol();          
-        changeStation();
-        u16State = 0;
+        // reset all station data
+        if (sw1.Status() & sw2.Status()) {
+          Serial.println("-- reset station data");
+          resetStationData();
+          setStationList(StationListDefault);
+          u16State = 40;
+        } else {
+          changeVol();          
+          changeStation();
+          u16State = 0;
+        }
       }
+      break;
+    case 40:
+      if (!sw1.Status() & !sw2.Status()) {
+        u16State = 0;   
+      } 
       break;
     default:
       u16State = 0;
