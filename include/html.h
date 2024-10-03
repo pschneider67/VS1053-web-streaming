@@ -51,12 +51,19 @@ String webpage = R"(
       input[type="submit"]:hover {
         background-color: #45a049;
       }
+      
+      table { width: 100%; border-collapse: collapse; }
+      table, th, td { border: 1px solid black; }
+      th, td { padding: 10px; text-align: center; }
+      th { background-color: #4CAF50; color: white; }
+      tr:nth-child(even) { background-color: #f2f2f2; }
+
     </style>
     <title>ESP32 Radio</title>
   </head>
  
   <body>
-    <h1>ESP32 WebRadio - Sender</h1>
+    <h1>ESP32 WebRadio - Sender einstellen</h1>
     <form action="/set">
     
       <table cellspacing=10px>

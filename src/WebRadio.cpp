@@ -153,7 +153,7 @@ void setStationList(station_t* pStationList) {
 void resetStationData(void) {
   for (int i = 0; i < ST_MAX; i++) {
     StationList[i] = StationListDefault[i];
-  }  
+  } 
 }
 
 // -----------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ void gpioHandling(void) {
   static uint32_t u32Timer;
 
   sw1.runState();
-  sw2.runState();
+  sw4.runState();
 
   switch (u16State) {
     case 0:
@@ -216,7 +216,7 @@ void gpioHandling(void) {
     case 30:
       if (millis() - u32Timer >= 10) {
         // reset all station data
-        if (sw1.Status() & sw2.Status()) {
+        if (sw1.Status() & sw4.Status()) {
           Serial.println("-- reset station data");
           resetStationData();
           setStationList(StationListDefault);
@@ -229,7 +229,7 @@ void gpioHandling(void) {
       }
       break;
     case 40:
-      if (!sw1.Status() & !sw2.Status()) {
+      if (!sw1.Status() & !sw4.Status()) {
         u16State = 0;   
       } 
       break;
